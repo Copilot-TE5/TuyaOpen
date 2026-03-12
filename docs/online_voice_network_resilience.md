@@ -1,8 +1,8 @@
 # TuyaOpen 在线语音网络韧性分析
 
-> **文档版本**：v1.0  
+> **文档版本**：v1.1  
 > **适用项目**：[TuyaOpen](https://github.com/tuya/TuyaOpen)  
-> **最后更新**：2026-03-10  
+> **最后更新**：2026-03-12  
 > **关联规格书**：[online_voice_service_spec.md](./online_voice_service_spec.md)
 
 ---
@@ -831,3 +831,12 @@ OPERATE_RET on_ai_disconnected(VOID_T *data) {
 - `src/tuya_ai_service/svc_ai_agent/src/tuya_ai_input.c`  
 - `apps/tuya.ai/ai_components/ai_agent/src/ai_agent.c`  
 - `apps/tuya.ai/ai_components/ai_audio/src/ai_audio_player.c`
+
+---
+
+## 修訂記錄
+
+| 版本 | 日期 | 說明 |
+|------|------|------|
+| v1.0 | 2026-03-10 | 初版：基於 TuyaOpen 源碼調查在線語音控制體驗，建立網路韌性分析文檔 |
+| v1.1 | 2026-03-12 | 複審更新：確認所有機制描述與最新源碼一致，補充修訂記錄 |
