@@ -1,0 +1,499 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>TuyaOpen Matter 協議支援調查報告</title>
+  <style>
+    :root {
+      --primary: #1a56db;
+      --primary-light: #e8f0fe;
+      --success: #0e9f6e;
+      --success-light: #def7ec;
+      --warning: #d97706;
+      --warning-light: #fef3c7;
+      --danger: #e02424;
+      --danger-light: #fde8e8;
+      --gray-50: #f9fafb;
+      --gray-100: #f3f4f6;
+      --gray-200: #e5e7eb;
+      --gray-700: #374151;
+      --gray-800: #1f2937;
+      --gray-900: #111827;
+      --border-radius: 8px;
+      --shadow: 0 1px 3px rgba(0,0,0,.10), 0 1px 2px rgba(0,0,0,.06);
+      --shadow-md: 0 4px 6px rgba(0,0,0,.07), 0 2px 4px rgba(0,0,0,.06);
+    }
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+      font-size: 15px;
+      line-height: 1.7;
+      color: var(--gray-800);
+      background: var(--gray-50);
+    }
+    a { color: var(--primary); text-decoration: none; }
+    a:hover { text-decoration: underline; }
+
+    /* ── Header ── */
+    header {
+      background: linear-gradient(135deg, #1a56db 0%, #1e40af 100%);
+      color: #fff;
+      padding: 48px 24px 40px;
+      text-align: center;
+    }
+    header .badge {
+      display: inline-block;
+      background: rgba(255,255,255,.20);
+      border: 1px solid rgba(255,255,255,.35);
+      border-radius: 20px;
+      padding: 4px 14px;
+      font-size: 12px;
+      letter-spacing: .5px;
+      text-transform: uppercase;
+      margin-bottom: 16px;
+    }
+    header h1 { font-size: 2rem; font-weight: 700; margin-bottom: 10px; }
+    header p  { font-size: 1rem; opacity: .85; max-width: 600px; margin: 0 auto; }
+    header .meta {
+      margin-top: 18px;
+      font-size: 13px;
+      opacity: .70;
+    }
+
+    /* ── Layout ── */
+    .container { max-width: 960px; margin: 0 auto; padding: 36px 20px 60px; }
+
+    /* ── Verdict Banner ── */
+    .verdict {
+      background: var(--warning-light);
+      border-left: 5px solid var(--warning);
+      border-radius: var(--border-radius);
+      padding: 20px 24px;
+      margin-bottom: 32px;
+      box-shadow: var(--shadow);
+    }
+    .verdict h2 { font-size: 1.1rem; color: var(--warning); margin-bottom: 8px; }
+    .verdict p  { color: var(--gray-800); }
+
+    /* ── Section ── */
+    section { margin-bottom: 36px; }
+    section h2 {
+      font-size: 1.25rem;
+      font-weight: 700;
+      color: var(--gray-900);
+      border-bottom: 2px solid var(--gray-200);
+      padding-bottom: 8px;
+      margin-bottom: 18px;
+    }
+    section h3 {
+      font-size: 1rem;
+      font-weight: 600;
+      color: var(--gray-700);
+      margin: 16px 0 8px;
+    }
+
+    /* ── Evidence Cards ── */
+    .evidence-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 18px;
+      margin-bottom: 18px;
+    }
+    @media (max-width: 640px) { .evidence-grid { grid-template-columns: 1fr; } }
+
+    .card {
+      background: #fff;
+      border-radius: var(--border-radius);
+      box-shadow: var(--shadow);
+      padding: 20px 22px;
+    }
+    .card.pro  { border-top: 4px solid var(--success); }
+    .card.con  { border-top: 4px solid var(--danger);  }
+    .card .card-title {
+      font-size: .85rem;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: .5px;
+      margin-bottom: 10px;
+    }
+    .card.pro .card-title { color: var(--success); }
+    .card.con .card-title { color: var(--danger);  }
+    .card ul { padding-left: 20px; }
+    .card ul li { margin-bottom: 6px; font-size: .93rem; }
+
+    /* ── Code blocks ── */
+    .code-block {
+      background: #1e1e2e;
+      color: #cdd6f4;
+      border-radius: var(--border-radius);
+      padding: 18px 20px;
+      font-family: "SFMono-Regular", Consolas, "Liberation Mono", Menlo, monospace;
+      font-size: 13px;
+      line-height: 1.6;
+      overflow-x: auto;
+      box-shadow: var(--shadow-md);
+      margin: 12px 0;
+    }
+    .code-block .c-comment { color: #6c7086; }
+    .code-block .c-keyword { color: #cba6f7; }
+    .code-block .c-macro   { color: #89b4fa; }
+    .code-block .c-number  { color: #fab387; }
+    .code-block .c-string  { color: #a6e3a1; }
+
+    /* ── File reference ── */
+    .file-ref {
+      display: inline-block;
+      background: var(--primary-light);
+      color: var(--primary);
+      border-radius: 4px;
+      padding: 2px 8px;
+      font-family: monospace;
+      font-size: 12.5px;
+      margin-bottom: 6px;
+    }
+
+    /* ── Feature table ── */
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      background: #fff;
+      border-radius: var(--border-radius);
+      overflow: hidden;
+      box-shadow: var(--shadow);
+      margin: 12px 0 20px;
+    }
+    thead { background: var(--gray-800); color: #fff; }
+    th, td { padding: 11px 16px; text-align: left; font-size: .9rem; }
+    th { font-weight: 600; }
+    tbody tr:nth-child(even) { background: var(--gray-50); }
+    tbody tr:hover { background: var(--primary-light); }
+    .status-yes  { color: var(--success); font-weight: 700; }
+    .status-no   { color: var(--danger);  font-weight: 700; }
+    .status-part { color: var(--warning); font-weight: 700; }
+
+    /* ── References ── */
+    ol.refs { padding-left: 20px; }
+    ol.refs li {
+      margin-bottom: 10px;
+      font-size: .9rem;
+    }
+    ol.refs .ref-file {
+      display: block;
+      font-family: monospace;
+      font-size: .82rem;
+      color: var(--gray-700);
+      background: var(--gray-100);
+      border-radius: 4px;
+      padding: 2px 7px;
+      margin-top: 2px;
+    }
+
+    /* ── Conclusion box ── */
+    .conclusion {
+      background: var(--primary-light);
+      border-left: 5px solid var(--primary);
+      border-radius: var(--border-radius);
+      padding: 22px 26px;
+      margin-top: 8px;
+    }
+    .conclusion h3 { color: var(--primary); margin-bottom: 8px; }
+
+    /* ── Footer ── */
+    footer {
+      text-align: center;
+      font-size: 13px;
+      color: #9ca3af;
+      padding: 24px 20px;
+      border-top: 1px solid var(--gray-200);
+      background: #fff;
+    }
+  </style>
+</head>
+<body>
+
+<header>
+  <div class="badge">調查報告</div>
+  <h1>TuyaOpen 對 Matter 協議的支援調查</h1>
+  <p>本報告系統性地調查 TuyaOpen 開源 SDK 對 Matter（CSA 連線標準）的支援狀況，並提供原始碼層級的佐證。</p>
+  <div class="meta">調查對象：<strong>Copilot-TE5/TuyaOpen</strong> · 調查日期：2026-03-18</div>
+</header>
+
+<div class="container">
+
+  <!-- ── Verdict ── -->
+  <div class="verdict">
+    <h2>⚠ 調查結論：部分支援（預設關閉）</h2>
+    <p>
+      TuyaOpen 對 Matter 僅有<strong>有限且預設關閉</strong>的支援。
+      現有實作侷限於透過藍牙低功耗（BLE）為 Matter 裝置提供配網所需的私有 GATT 特徵值（Characteristic），
+      並不包含完整的 Matter 協議棧（CHIP SDK）、設備模型（Data Model）或認證流程（Commissioning）。
+      Matter 相關功能未出現在官方文件或 README 中，亦無對應的範例專案。
+    </p>
+  </div>
+
+  <!-- ── 1. 專案簡介 ── -->
+  <section>
+    <h2>1. 專案簡介</h2>
+    <p>
+      TuyaOpen 是涂鴉智能（Tuya）發佈的跨平台 IoT SDK，以 C/C++ 撰寫，支援 Tuya T2/T3/T5 系列 MCU、ESP32 系列、LN882H、BK7231N 及 Linux/Ubuntu 等平台。
+      其主要定位為 AI Agent 硬體開發框架，整合語音辨識（ASR）、喚醒詞偵測（KWS）、文字轉語音（TTS）及大型語言模型（LLM）等功能，並支援 Google Home 與 Amazon Alexa 生態系。
+    </p>
+    <p style="margin-top:10px;">
+      <strong>Matter</strong>（前稱 CHIP，由連線標準聯盟 CSA 主導）是一套統一的智能家居互通協議，
+      採用 IPv6 為底層，支援 Wi-Fi、Thread 及 BLE 等傳輸層，旨在使不同廠商裝置能夠無縫互操作。
+    </p>
+  </section>
+
+  <!-- ── 2. 支援與否的證據 ── -->
+  <section>
+    <h2>2. 支援與否的關鍵證據</h2>
+
+    <div class="evidence-grid">
+      <div class="card pro">
+        <div class="card-title">✅ 支援 Matter 的證據</div>
+        <ul>
+          <li>定義了 <code>ENABLE_MATTER_TUYA_BLE_CHAR</code> 編譯旗標</li>
+          <li>提供三個 Matter 配網用私有 BLE GATT 特徵值（T1、T2、T3）</li>
+          <li>檔案說明中明確提及「Matter over Tuya project」</li>
+          <li>連線事件中有條件式地填入 Matter 特徵值句柄（handle）</li>
+          <li>支援雙 GATT 服務結構（一般服務 + Matter 服務）</li>
+        </ul>
+      </div>
+      <div class="card con">
+        <div class="card-title">❌ 不支援完整 Matter 的證據</div>
+        <ul>
+          <li>Matter 支援<strong>預設關閉</strong>（<code>ENABLE_MATTER_TUYA_BLE_CHAR = 0</code>）</li>
+          <li>未整合 CHIP SDK（Matter 官方協議棧）</li>
+          <li>無 Matter 設備類型（Device Type）或資料模型（Data Model）</li>
+          <li>無 Matter 認證流程（Commissioning / Attestation）</li>
+          <li>無 Matter Cluster 或屬性（Attribute）定義</li>
+          <li>README、README_zh 及官方文件均<strong>未提及 Matter</strong></li>
+          <li>無 Matter 相關範例專案</li>
+          <li>無 Kconfig / CMake 層級的 Matter 功能選項</li>
+          <li>無 Thread 或 Matter over Wi-Fi 支援</li>
+        </ul>
+      </div>
+    </div>
+
+    <!-- Evidence A -->
+    <h3>證據 A：BLE 特徵值定義（支援證據）</h3>
+    <span class="file-ref">src/tal_bluetooth/include/tal_bluetooth_def.h，第 69–77 行</span>
+    <div class="code-block"><span class="c-comment">/* Turn on tuya private ble char for iOS execution matter provisioning*/</span>
+<span class="c-keyword">#ifndef</span> <span class="c-macro">ENABLE_MATTER_TUYA_BLE_CHAR</span>
+<span class="c-keyword">#define</span> <span class="c-macro">ENABLE_MATTER_TUYA_BLE_CHAR</span> (<span class="c-number">0</span>)   <span class="c-comment">/* ← 預設關閉 */</span>
+<span class="c-keyword">#endif</span>
+<span class="c-keyword">#if</span> (defined(<span class="c-macro">ENABLE_MATTER_TUYA_BLE_CHAR</span>) &amp;&amp; (<span class="c-macro">ENABLE_MATTER_TUYA_BLE_CHAR</span> == <span class="c-number">1</span>))
+<span class="c-keyword">#define</span> <span class="c-macro">TAL_MATTER_TUYA_T1_CHAR_INDEX</span> (<span class="c-number">3</span>)
+<span class="c-keyword">#define</span> <span class="c-macro">TAL_MATTER_TUYA_T2_CHAR_INDEX</span> (<span class="c-number">4</span>)
+<span class="c-keyword">#define</span> <span class="c-macro">TAL_MATTER_TUYA_T3_CHAR_INDEX</span> (<span class="c-number">5</span>)
+<span class="c-keyword">#endif</span></div>
+
+    <!-- Evidence B -->
+    <h3>證據 B：Matter 服務結構定義（支援證據）</h3>
+    <span class="file-ref">src/tal_bluetooth/src/tal_bluetooth.c，第 1–35 行</span>
+    <div class="code-block"><span class="c-comment">/**
+ * @file tal_bluetooth.c
+ * @brief ... It also includes conditional support for specific BLE
+ * characteristics related to the Matter over Tuya project.
+ */</span>
+
+<span class="c-keyword">#if</span> (defined(<span class="c-macro">ENABLE_MATTER_TUYA_BLE_CHAR</span>) &amp;&amp; (<span class="c-macro">ENABLE_MATTER_TUYA_BLE_CHAR</span> == <span class="c-number">1</span>))
+<span class="c-keyword">#define</span> <span class="c-macro">TAL_COMMON_SERVICE_MAX_NUM</span>    (<span class="c-number">2</span>)   <span class="c-comment">/* 啟用 Matter 時有兩個 GATT 服務 */</span>
+<span class="c-keyword">#define</span> <span class="c-macro">TAL_MATTER_TUYA_SERVICE_INDEX</span> (<span class="c-number">1</span>)
+<span class="c-keyword">#define</span> <span class="c-macro">TAL_MATTER_TUYA_CHAR_MAX_NUM</span>  (<span class="c-number">3</span>)
+<span class="c-keyword">#else</span>
+<span class="c-keyword">#define</span> <span class="c-macro">TAL_COMMON_SERVICE_MAX_NUM</span> (<span class="c-number">1</span>)   <span class="c-comment">/* 預設只有一個 GATT 服務 */</span>
+<span class="c-keyword">#endif</span></div>
+
+    <!-- Evidence C -->
+    <h3>證據 C：連線事件中的 Matter 特徵值句柄（支援證據）</h3>
+    <span class="file-ref">src/tal_bluetooth/src/tal_bluetooth.c，第 109–116 行</span>
+    <div class="code-block"><span class="c-keyword">#if</span> (defined(<span class="c-macro">ENABLE_MATTER_TUYA_BLE_CHAR</span>) &amp;&amp; (<span class="c-macro">ENABLE_MATTER_TUYA_BLE_CHAR</span> == <span class="c-number">1</span>))
+    tal_event.ble_event.connect.peer.char_handle[<span class="c-macro">TAL_MATTER_TUYA_T1_CHAR_INDEX</span>] =
+        ptkl_ble_service_char[<span class="c-macro">TAL_MATTER_TUYA_T1_CHAR_INDEX</span>].handle;
+    tal_event.ble_event.connect.peer.char_handle[<span class="c-macro">TAL_MATTER_TUYA_T2_CHAR_INDEX</span>] =
+        ptkl_ble_service_char[<span class="c-macro">TAL_MATTER_TUYA_T2_CHAR_INDEX</span>].handle;
+    tal_event.ble_event.connect.peer.char_handle[<span class="c-macro">TAL_MATTER_TUYA_T3_CHAR_INDEX</span>] =
+        ptkl_ble_service_char[<span class="c-macro">TAL_MATTER_TUYA_T3_CHAR_INDEX</span>].handle;
+<span class="c-keyword">#endif</span></div>
+
+    <!-- Evidence D -->
+    <h3>證據 D：README 未提及 Matter（不支援完整功能的證據）</h3>
+    <span class="file-ref">README.md，功能列表（第 33–44 行附近）</span>
+    <div class="code-block"><span class="c-comment">### 🚀 With TuyaOpen, you can:</span>
+- Develop hardware products featuring speech technologies such as `ASR`, `KWS`, `TTS`, and `STT`
+- Integrate with leading LLMs and AI platforms (Deepseek, ChatGPT, Claude, Gemini...)
+- Build smart devices with `advanced multimodal AI capabilities`
+- Create custom products and connect them to Tuya Cloud for `remote control` and `OTA updates`
+- Develop devices compatible with `Google Home` and `Amazon Alexa`   <span class="c-comment"># ← Matter 未出現在此清單</span>
+- Target a wide range of hardware applications using `Bluetooth`, `Wi-Fi`, `Ethernet`</div>
+  </section>
+
+  <!-- ── 3. 功能對照表 ── -->
+  <section>
+    <h2>3. Matter 功能支援對照表</h2>
+    <table>
+      <thead>
+        <tr>
+          <th>Matter 功能</th>
+          <th>支援狀態</th>
+          <th>說明</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td>BLE 配網特徵值（iOS Matter Provisioning）</td>
+          <td class="status-part">⚠ 部分支援</td>
+          <td>已實作，但預設關閉（需定義 <code>ENABLE_MATTER_TUYA_BLE_CHAR=1</code>）</td>
+        </tr>
+        <tr>
+          <td>完整 Matter 協議棧（CHIP SDK）</td>
+          <td class="status-no">✗ 不支援</td>
+          <td>未整合 CHIP SDK / connectedhomeip</td>
+        </tr>
+        <tr>
+          <td>Matter 設備類型（Device Type）</td>
+          <td class="status-no">✗ 不支援</td>
+          <td>無相關定義</td>
+        </tr>
+        <tr>
+          <td>Matter 資料模型（Data Model / Clusters）</td>
+          <td class="status-no">✗ 不支援</td>
+          <td>無 Cluster、Attribute 實作</td>
+        </tr>
+        <tr>
+          <td>Matter 認證與 Commissioning</td>
+          <td class="status-no">✗ 不支援</td>
+          <td>無 DAC、PAI 憑證鏈或認證流程</td>
+        </tr>
+        <tr>
+          <td>Matter over Thread</td>
+          <td class="status-no">✗ 不支援</td>
+          <td>未整合 OpenThread</td>
+        </tr>
+        <tr>
+          <td>Matter over Wi-Fi</td>
+          <td class="status-no">✗ 不支援</td>
+          <td>未實作 Matter over IP</td>
+        </tr>
+        <tr>
+          <td>Kconfig / CMake Matter 功能選項</td>
+          <td class="status-no">✗ 不支援</td>
+          <td>僅透過 C 前置處理器 define 控制</td>
+        </tr>
+        <tr>
+          <td>Matter 範例專案</td>
+          <td class="status-no">✗ 不支援</td>
+          <td><code>examples/</code> 目錄中無 Matter 相關範例</td>
+        </tr>
+        <tr>
+          <td>官方文件說明</td>
+          <td class="status-no">✗ 不支援</td>
+          <td>README 及 docs/ 目錄均未提及 Matter</td>
+        </tr>
+      </tbody>
+    </table>
+  </section>
+
+  <!-- ── 4. 技術分析 ── -->
+  <section>
+    <h2>4. 技術深度分析</h2>
+    <h3>4.1 現有實作的範疇</h3>
+    <p>
+      現有的 Matter 相關程式碼僅存在於 <code>src/tal_bluetooth/</code> 模組中，
+      其目的是在 Tuya BLE 協議層之上，額外暴露三個私有 GATT 特徵值（T1、T2、T3），
+      以供 iOS 裝置在執行 Matter 配網（Provisioning）流程時使用。
+      這屬於 Tuya 私有 BLE 協議對 Matter 配網的橋接（bridge），而非完整的 Matter 協議棧實作。
+    </p>
+    <h3>4.2 啟用方式</h3>
+    <p>若需啟用此 BLE Matter 配網支援，需在編譯時加入：</p>
+    <div class="code-block">-D<span class="c-macro">ENABLE_MATTER_TUYA_BLE_CHAR</span>=<span class="c-number">1</span></div>
+    <p>但這僅啟用 BLE 特徵值，並非完整的 Matter 功能。</p>
+
+    <h3>4.3 與第三方 Matter SDK 的差距</h3>
+    <p>
+      要在 TuyaOpen 上實現完整的 Matter 支援，至少需要整合以下元件：
+    </p>
+    <ul style="padding-left:20px; margin-top:8px;">
+      <li>
+        <a href="https://github.com/project-chip/connectedhomeip" target="_blank" rel="noopener">
+          CHIP SDK（connectedhomeip）
+        </a> — Matter 官方協議棧
+      </li>
+      <li>OpenThread（Matter over Thread 場景）</li>
+      <li>Matter 設備認證鏈（DAC / PAI / PAA 憑證）</li>
+      <li>Matter 設備類型與 Cluster 定義</li>
+    </ul>
+  </section>
+
+  <!-- ── 5. 結論 ── -->
+  <section>
+    <h2>5. 結論</h2>
+    <div class="conclusion">
+      <h3>TuyaOpen 對 Matter 的支援狀態：有限支援（預設關閉）</h3>
+      <p>
+        TuyaOpen 包含一個<strong>預設關閉</strong>的、僅限 BLE 層的 Matter 橋接實作，
+        用於支援 iOS 裝置透過 Tuya 私有 BLE 協議執行 Matter 配網。
+        此實作由編譯旗標 <code>ENABLE_MATTER_TUYA_BLE_CHAR</code> 控制，
+        不包含完整的 Matter 協議棧、設備模型、認證機制或 Thread 支援。
+      </p>
+      <p style="margin-top:10px;">
+        對於需要完整 Matter 互通性（Interoperability）的產品，
+        開發者需要在 TuyaOpen 之外另行整合 CHIP SDK 及相關生態元件。
+      </p>
+    </div>
+  </section>
+
+  <!-- ── 6. 參考來源 ── -->
+  <section>
+    <h2>6. 參考來源</h2>
+    <ol class="refs">
+      <li>
+        <strong>BLE 特徵值定義（Matter 配網旗標）</strong>
+        <span class="file-ref">src/tal_bluetooth/include/tal_bluetooth_def.h，第 69–77 行</span>
+        定義 <code>ENABLE_MATTER_TUYA_BLE_CHAR</code>（預設 0）及三個 Matter 特徵值索引常數。
+      </li>
+      <li>
+        <strong>BLE 服務結構與 Matter 支援實作</strong>
+        <span class="file-ref">src/tal_bluetooth/src/tal_bluetooth.c，第 1–35 行、第 109–116 行</span>
+        檔案說明明確提及「Matter over Tuya project」；連線事件中條件式填入 Matter 特徵值句柄。
+      </li>
+      <li>
+        <strong>官方 README（Matter 未出現）</strong>
+        <span class="file-ref">README.md（根目錄）</span>
+        功能列表中未提及 Matter；支援生態系包含 Google Home 與 Amazon Alexa，但不含 Matter。
+      </li>
+      <li>
+        <strong>範例專案目錄（無 Matter 範例）</strong>
+        <span class="file-ref">examples/（根目錄子目錄）</span>
+        搜尋 <code>examples/</code> 下所有檔案，未發現 Matter 相關範例。
+      </li>
+      <li>
+        <strong>第三方函式庫（無 CHIP SDK）</strong>
+        <span class="file-ref">src/（根目錄子目錄）</span>
+        已整合的第三方庫包含 FlashDB、littlefs、cJSON、MbedTLS，但不含 connectedhomeip（CHIP SDK）。
+      </li>
+      <li>
+        <strong>Matter 標準官方資源</strong>
+        <a href="https://csa-iot.org/developer-resource/specifications-download-request/" target="_blank" rel="noopener">
+          連線標準聯盟（CSA）Matter 規範
+        </a>
+      </li>
+      <li>
+        <strong>CHIP SDK（Matter 開源協議棧）</strong>
+        <a href="https://github.com/project-chip/connectedhomeip" target="_blank" rel="noopener">
+          github.com/project-chip/connectedhomeip
+        </a>
+      </li>
+    </ol>
+  </section>
+
+</div>
+
+<footer>
+  本報告由 GitHub Copilot 自動生成 · 基於 <strong>Copilot-TE5/TuyaOpen</strong> 原始碼分析 · 2026-03-18
+</footer>
+
+</body>
+</html>
